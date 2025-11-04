@@ -2,6 +2,8 @@ package com.eneifour.fantry.payment.domain;
 
 import com.eneifour.fantry.common.domain.BaseAuditingEntity;
 import com.eneifour.fantry.payment.domain.bootpay.BootPayStatus;
+import com.eneifour.fantry.payment.domain.vo.PaymentUpdateData;
+import com.eneifour.fantry.payment.exception.CreatePaymentFailedException;
 import com.eneifour.fantry.payment.exception.PaymentAmountMismatchException;
 import jakarta.persistence.*;
 import lombok.*;

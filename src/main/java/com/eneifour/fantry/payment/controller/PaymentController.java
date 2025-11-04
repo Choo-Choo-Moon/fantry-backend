@@ -2,9 +2,8 @@ package com.eneifour.fantry.payment.controller;
 
 import com.eneifour.fantry.payment.domain.Payment;
 import com.eneifour.fantry.payment.domain.PaymentStatus;
-import com.eneifour.fantry.payment.domain.bootpay.BootpayReceiptDto;
 import com.eneifour.fantry.payment.dto.*;
-import com.eneifour.fantry.payment.mapper.PaymentMapper;
+import com.eneifour.fantry.payment.infrastructure.bootpay.BootpayReceiptDto;
 import com.eneifour.fantry.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,13 +23,13 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/api/payments")
-    public ResponseEntity<ApiResponse<PaymentResponse>> requestPaymentCreate(
+    public ResponseEntity<ApiResponse<PaymentCreateResponse>> requestPaymentCreate(
             @Valid
             @RequestBody
             PaymentCreateRequest paymentCreateRequest
-    ) throws NoSuchAlgorithmException, ClassNotFoundException {
+    ) throws NoSuchAlgorithmException {
         Payment createdPayment = paymentService.createPayment(paymentCreateRequest);
-        PaymentResponse response = PaymentMapper.entityToResponse(createdPayment, PaymentResponse.class);
+        PaymentCreateResponse response = PaymentCreateResponse.from(createdPayment);
         return ResponseEntity.ok(new ApiResponse<>(true, response));
     }
 

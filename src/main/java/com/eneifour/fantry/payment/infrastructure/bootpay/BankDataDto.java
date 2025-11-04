@@ -1,4 +1,4 @@
-package com.eneifour.fantry.payment.domain.bootpay;
+package com.eneifour.fantry.payment.infrastructure.bootpay;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BankDataDto {

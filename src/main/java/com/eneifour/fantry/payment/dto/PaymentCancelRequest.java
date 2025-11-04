@@ -1,6 +1,6 @@
 package com.eneifour.fantry.payment.dto;
 
-import com.eneifour.fantry.payment.domain.bootpay.BankDataDto;
+import com.eneifour.fantry.payment.infrastructure.bootpay.BankDataDto;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

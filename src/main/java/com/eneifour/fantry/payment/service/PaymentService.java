@@ -1,8 +1,7 @@
 package com.eneifour.fantry.payment.service;
 
 import com.eneifour.fantry.payment.domain.Payment;
-import com.eneifour.fantry.payment.domain.PaymentStatus;
-import com.eneifour.fantry.payment.domain.bootpay.BootpayReceiptDto;
+import com.eneifour.fantry.payment.infrastructure.bootpay.BootpayReceiptDto;
 import com.eneifour.fantry.payment.dto.PaymentCancelRequest;
 import com.eneifour.fantry.payment.dto.PaymentCreateRequest;
 
@@ -36,7 +35,7 @@ public interface PaymentService {
      * 금액 일치 여부를 확인하고 결제를 완료 처리합니다.
      * </p>
      *
-     * @param orderId 주문 ID
+     * @param orderId     주문 ID
      * @param receiptData 클라이언트로부터 받은 영수증 JSON 데이터
      * @throws Exception Bootpay API 호출 실패, 금액 불일치 등의 오류 시
      */
@@ -48,7 +47,7 @@ public interface PaymentService {
      * Bootpay를 통해 결제 취소를 요청하고, 취소 결과를 반환합니다.
      * </p>
      *
-     * @param orderId 결제 취소 주문 아이디
+     * @param orderId              결제 취소 주문 아이디
      * @param paymentCancelRequest 결제 취소 요청 정보
      * @return 취소된 결제의 영수증 정보
      * @throws Exception Bootpay API 호출 실패 시

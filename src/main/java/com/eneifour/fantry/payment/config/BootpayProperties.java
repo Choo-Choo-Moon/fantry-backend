@@ -1,4 +1,4 @@
-package com.eneifour.fantry.payment.domain.config;
+package com.eneifour.fantry.payment.config;
 
 import lombok.Getter;
 import lombok.Setter;

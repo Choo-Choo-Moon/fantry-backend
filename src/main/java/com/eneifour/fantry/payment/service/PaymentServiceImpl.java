@@ -2,12 +2,14 @@ package com.eneifour.fantry.payment.service;
 
 import com.eneifour.fantry.payment.domain.Payment;
 import com.eneifour.fantry.payment.domain.PaymentStatus;
-import com.eneifour.fantry.payment.domain.bootpay.BootpayReceiptDto;
+import com.eneifour.fantry.payment.domain.vo.PaymentUpdateData;
 import com.eneifour.fantry.payment.dto.PaymentCancelRequest;
 import com.eneifour.fantry.payment.dto.PaymentCreateRequest;
 import com.eneifour.fantry.payment.exception.*;
-import com.eneifour.fantry.payment.mapper.PaymentMapper;
+import com.eneifour.fantry.payment.infrastructure.bootpay.BootpayReceiptDto;
+import com.eneifour.fantry.payment.infrastructure.bootpay.converter.BootpayReceiptConverter;
 import com.eneifour.fantry.payment.repository.PaymentRepository;
+import com.eneifour.fantry.payment.util.Encryptor;
 import com.eneifour.fantry.payment.util.OrderUpdateHelper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;

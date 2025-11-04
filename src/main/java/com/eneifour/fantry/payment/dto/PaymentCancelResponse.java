@@ -1,6 +1,6 @@
 package com.eneifour.fantry.payment.dto;
 
-import com.eneifour.fantry.payment.domain.bootpay.BootpayReceiptDto;
+import com.eneifour.fantry.payment.infrastructure.bootpay.BootpayReceiptDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

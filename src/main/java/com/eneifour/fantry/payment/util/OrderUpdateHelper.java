@@ -10,7 +10,7 @@ import com.eneifour.fantry.orders.dto.OrdersRequest;
 import com.eneifour.fantry.orders.repository.OrdersRepository;
 import com.eneifour.fantry.orders.service.OrdersService;
 import com.eneifour.fantry.payment.domain.Payment;
-import com.eneifour.fantry.payment.domain.bootpay.BootpayReceiptDto;
+import com.eneifour.fantry.payment.domain.vo.PaymentUpdateData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

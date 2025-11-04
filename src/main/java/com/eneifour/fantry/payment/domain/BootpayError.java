@@ -1,4 +1,4 @@
-package com.eneifour.fantry.payment.domain.bootpay;
+package com.eneifour.fantry.payment.domain;
 
 import lombok.Getter;
 

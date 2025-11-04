@@ -1,4 +1,4 @@
-package com.eneifour.fantry.payment.domain.bootpay;
+package com.eneifour.fantry.payment.infrastructure.bootpay;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,7 +10,6 @@ import org.hibernate.annotations.TimeZoneStorageType;
 import java.time.ZonedDateTime;
 
 @Getter
-@Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class VirtualBankDataDto {
     @JsonAlias("tid")

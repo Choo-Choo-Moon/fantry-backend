@@ -1,10 +1,11 @@
 package com.eneifour.fantry.payment.service;
 
-import com.eneifour.fantry.payment.domain.bootpay.BankDataDto;
-import com.eneifour.fantry.payment.domain.bootpay.BootpayReceiptDto;
-import com.eneifour.fantry.payment.domain.config.BootpayProperties;
+
+import com.eneifour.fantry.payment.config.BootpayProperties;
 import com.eneifour.fantry.payment.exception.BootpayException;
 import com.eneifour.fantry.payment.domain.PaymentErrorCode;
+import com.eneifour.fantry.payment.infrastructure.bootpay.BootpayReceiptDto;
+import com.eneifour.fantry.payment.infrastructure.bootpay.BankDataDto;
 import com.eneifour.fantry.payment.util.BootpayValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

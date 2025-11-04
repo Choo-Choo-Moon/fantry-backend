@@ -1,6 +1,7 @@
 package com.eneifour.fantry.common.config;
 
-import com.eneifour.fantry.payment.domain.config.BootpayProperties;
+
+import com.eneifour.fantry.payment.config.BootpayProperties;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
