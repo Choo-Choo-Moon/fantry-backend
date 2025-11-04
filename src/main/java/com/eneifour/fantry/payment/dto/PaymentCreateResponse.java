@@ -3,11 +3,13 @@ package com.eneifour.fantry.payment.dto;
 import com.eneifour.fantry.payment.domain.Payment;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
 @AllArgsConstructor
-public class PaymentResponse {
+public class PaymentCreateResponse {
     private String orderId;
+
+    public static PaymentCreateResponse from(Payment payment) {
+        return new PaymentCreateResponse(payment.getOrderId());
+    }
 }

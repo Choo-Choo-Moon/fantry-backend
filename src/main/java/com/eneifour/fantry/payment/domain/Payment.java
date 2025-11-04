@@ -1,7 +1,6 @@
 package com.eneifour.fantry.payment.domain;
 
 import com.eneifour.fantry.common.domain.BaseAuditingEntity;
-import com.eneifour.fantry.payment.domain.bootpay.BootPayStatus;
 import com.eneifour.fantry.payment.domain.vo.PaymentUpdateData;
 import com.eneifour.fantry.payment.exception.CreatePaymentFailedException;
 import com.eneifour.fantry.payment.exception.PaymentAmountMismatchException;
@@ -18,10 +17,9 @@ import java.util.Map;
 @Entity
 @Table(name = "payment")
 @Getter
-@Setter
-@ToString
-@AllArgsConstructor
-@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 public class Payment extends BaseAuditingEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,7 +37,7 @@ public class Payment extends BaseAuditingEntity {
     private String orderName;
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata", columnDefinition = "json")
-    private Map<String,Object> metadata;
+    private Map<String, Object> metadata;
     @Column(name = "pg")
     private String pg;
     @Column(name = "method")
@@ -76,11 +74,43 @@ public class Payment extends BaseAuditingEntity {
         }
     }
 
-    public boolean isPaymentWaiting() {
-        return this.bootpayStatus == BootPayStatus.PAYMENT_WAITING;
+    public static Payment create(String orderId, Integer price) throws CreatePaymentFailedException {
+        return Payment.builder()
+                .orderId(orderId)
+                .price(price)
+                .status(PaymentStatus.VERIFYING)
+                .build();
     }
 
-    public boolean isPaymentApproving() {
-        return this.bootpayStatus == BootPayStatus.PAYMENT_APPROVING;
+    public void update(PaymentUpdateData paymentUpdateData) {
+        this.receiptId = paymentUpdateData.getReceiptId();
+        this.cancelledPrice = paymentUpdateData.getCancelledPrice();
+        this.orderName = paymentUpdateData.getOrderName();
+        this.metadata = paymentUpdateData.getMetadata();
+        this.pg = paymentUpdateData.getPg();
+        this.method = paymentUpdateData.getMethod();
+        this.currency = paymentUpdateData.getCurrency();
+        this.requestedAt = paymentUpdateData.getRequestedAt();
+        this.purchasedAt = paymentUpdateData.getPurchasedAt();
+        this.cancelledAt = paymentUpdateData.getCancelledAt();
+        this.receiptUrl = paymentUpdateData.getReceiptUrl();
+        this.bootpayStatus = paymentUpdateData.getBootPayStatus();
+        this.paymentInfo = paymentUpdateData.getPaymentInfo();
+
+        if (this.bootpayStatus == BootPayStatus.PAYMENT_COMPLETED && this.cancelledPrice > 0) {
+            this.status = PaymentStatus.RETURNED;
+        } else if (this.bootpayStatus == BootPayStatus.PAYMENT_CANCELLED) {
+            this.status = PaymentStatus.CANCELED;
+        }
+    }
+
+    public boolean isVerify(PaymentUpdateData paymentUpdateData) {
+        return this.receiptId.equals(paymentUpdateData.getReceiptId())
+                && this.orderId.equals(paymentUpdateData.getOrderId())
+                && this.orderName.equals(paymentUpdateData.getOrderName());
+    }
+
+    public void markComplete() {
+        this.status = PaymentStatus.COMPLETE;
     }
 }

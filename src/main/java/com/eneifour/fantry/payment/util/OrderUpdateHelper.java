@@ -7,7 +7,6 @@ import com.eneifour.fantry.auction.repository.AuctionRepository;
 import com.eneifour.fantry.auction.service.AuctionService;
 import com.eneifour.fantry.orders.domain.Orders;
 import com.eneifour.fantry.orders.dto.OrdersRequest;
-import com.eneifour.fantry.orders.repository.OrdersRepository;
 import com.eneifour.fantry.orders.service.OrdersService;
 import com.eneifour.fantry.payment.domain.Payment;
 import com.eneifour.fantry.payment.domain.vo.PaymentUpdateData;
@@ -29,11 +28,8 @@ public class OrderUpdateHelper {
     private final AuctionRepository auctionRepository;
 
     @Transactional
-    public void purchase(Payment payment, BootpayReceiptDto bootpayReceiptDto) {
-        if (bootpayReceiptDto.getMetadata() == null) {
-            return;
-        }
-        Map<String, Object> metaData = bootpayReceiptDto.getMetadata();
+    public void purchase(Payment payment) {
+        Map<String, Object> metaData = payment.getMetadata();
         if (metaData.get("auctionInfo") == null) {
             return;
         }
@@ -84,9 +80,9 @@ public class OrderUpdateHelper {
     }
 
     @Transactional
-    public void refund(BootpayReceiptDto bootpayReceiptDto) {
-        Map<String, Object> metaData = bootpayReceiptDto.getMetadata();
-        if (bootpayReceiptDto.getMetadata() == null) {
+    public void refund(PaymentUpdateData paymentUpdateData) {
+        Map<String, Object> metaData = paymentUpdateData.getMetadata();
+        if (metaData == null) {
             return;
         }
         if (metaData.get("auctionInfo") == null) {
@@ -98,10 +94,10 @@ public class OrderUpdateHelper {
     }
 
     @Transactional
-    public void cancel(BootpayReceiptDto bootpayReceiptDto) {
+    public void cancel(PaymentUpdateData paymentUpdateData) {
         try {
-            Map<String, Object> metaData = bootpayReceiptDto.getMetadata();
-            if (bootpayReceiptDto.getMetadata() == null) {
+            Map<String, Object> metaData = paymentUpdateData.getMetadata();
+            if (metaData == null) {
                 return;
             }
             if (metaData.get("auctionInfo") == null) {
@@ -110,7 +106,7 @@ public class OrderUpdateHelper {
             Map<String, Object> auctionInfo = (Map<String, Object>) metaData.get("auctionInfo");
             Orders orders = ordersService.findByAuctionId((int) auctionInfo.get("auctionId"));
             ordersService.cancel(orders.getOrdersId());
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error("주문 취소 에러 : {}", e.getMessage());
         }
     }

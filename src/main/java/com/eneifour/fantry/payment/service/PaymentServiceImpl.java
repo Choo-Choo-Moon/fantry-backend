@@ -44,6 +44,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final BootpayService bootpayService;
     private final ObjectMapper objectMapper;
     private final OrderUpdateHelper orderUpdateHelper;
+    private final BootpayReceiptConverter bootpayReceiptConverter;
 
     /**
      * {@inheritDoc}
@@ -54,14 +55,16 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public Payment createPayment(PaymentCreateRequest paymentCreateRequest) throws CreatePaymentFailedException {
-        Payment payment;
         try {
-            payment = PaymentMapper.requestToEntity(paymentCreateRequest);
+            Integer itemId = Integer.parseInt(paymentCreateRequest.getItemId());
+            Integer price = Integer.parseInt(paymentCreateRequest.getPrice());
+            String orderId = Encryptor.createOrderId(paymentCreateRequest.getUsername(), itemId);
+            Payment payment = Payment.create(orderId, price);
             paymentRepository.save(payment);
+            return payment;
         } catch (NoSuchAlgorithmException e) {
             throw new CreatePaymentFailedException(e);
         }
-        return payment;
     }
 
     /**
@@ -84,10 +87,11 @@ public class PaymentServiceImpl implements PaymentService {
         Map<String, Object> result = objectMapper.readValue(webhookData, new TypeReference<>() {
         });
         BootpayReceiptDto bootpayReceiptDto = objectMapper.convertValue(result, BootpayReceiptDto.class);
+        PaymentUpdateData paymentUpdateData = bootpayReceiptConverter.toPaymentUpdateData(bootpayReceiptDto);
         switch (String.valueOf(result.get("webhook_type"))) {
-            case "PAYMENT_COMPLETED" -> bootpayWebhookService.onPaymentComplete(bootpayReceiptDto);
-            case "PAYMENT_CANCELLED" -> bootpayWebhookService.onPaymentCancelled(bootpayReceiptDto);
-            case "PAYMENT_PARTIAL_CANCELLED" -> bootpayWebhookService.onPaymentPartialCancelled(bootpayReceiptDto);
+            case "PAYMENT_COMPLETED" -> bootpayWebhookService.onPaymentComplete(paymentUpdateData);
+            case "PAYMENT_CANCELLED" -> bootpayWebhookService.onPaymentCancelled(paymentUpdateData);
+            case "PAYMENT_PARTIAL_CANCELLED" -> bootpayWebhookService.onPaymentPartialCancelled(paymentUpdateData);
             case "PAYMENT_CONFIRM_FAILED" -> bootpayWebhookService.onPaymentConfirmFailed(bootpayReceiptDto);
             case "PAYMENT_CANCEL_FAILED" -> bootpayWebhookService.onPaymentCancelFailed(bootpayReceiptDto);
             case "PAYMENT_REQUEST_FAILED" -> bootpayWebhookService.onPaymentRequestFailed(bootpayReceiptDto);
@@ -123,9 +127,10 @@ public class PaymentServiceImpl implements PaymentService {
                     .orElseThrow(NotFoundPaymentException::new);
 
             BootpayReceiptDto receiptFromBootpay = bootpayService.getReceiptViaWebClient(receiptFromClient.getReceiptId());
-            bootpayWebhookService.processPaymentVerification(payment, receiptFromBootpay);
-            if(payment.getStatus() == PaymentStatus.COMPLETE) {
-                orderUpdateHelper.purchase(payment, receiptFromBootpay);
+            PaymentUpdateData paymentUpdateData = bootpayReceiptConverter.toPaymentUpdateData(receiptFromBootpay);
+            bootpayWebhookService.processPaymentVerification(payment, paymentUpdateData);
+            if (payment.getStatus() == PaymentStatus.COMPLETE) {
+                orderUpdateHelper.purchase(payment);
             }
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("중복 결제 요청 감지 (WebHook 우선 처리): orderId={}", receiptFromClient.getOrderId());
@@ -149,14 +154,14 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findByOrderId(paymentCancelRequest.getOrderId())
                 .orElseThrow(NotFoundReceiptException::new);
 
-        if(!orderId.equals(payment.getOrderId())) {
+        if (!orderId.equals(payment.getOrderId())) {
             throw new OrderIdMismatchException();
         }
 
         BootpayReceiptDto resultReceipt = bootpayService.getReceiptViaWebClient(payment.getReceiptId());
         BootpayReceiptDto cancelResult = bootpayService.cancellationViaWebClient(payment.getReceiptId(), paymentCancelRequest.getCancelReason(), paymentCancelRequest.getUsername(), resultReceipt.getOrderId(), paymentCancelRequest.getCancelPrice(), paymentCancelRequest.getBankDataDto());
-        PaymentMapper.updateFromDto(payment, cancelResult);
-        paymentRepository.save(payment);
+        PaymentUpdateData paymentUpdateData = bootpayReceiptConverter.toPaymentUpdateData(cancelResult);
+        payment.update(paymentUpdateData);
         return cancelResult;
     }
 

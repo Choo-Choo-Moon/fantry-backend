@@ -1,10 +1,6 @@
 package com.eneifour.fantry.payment.service;
 
-import com.eneifour.fantry.auction.dto.AuctionDetailResponse;
 import com.eneifour.fantry.auction.service.AuctionService;
-import com.eneifour.fantry.orders.domain.Orders;
-import com.eneifour.fantry.orders.dto.OrdersRequest;
-import com.eneifour.fantry.orders.dto.OrdersResponse;
 import com.eneifour.fantry.orders.service.OrdersService;
 import com.eneifour.fantry.payment.domain.Payment;
 import com.eneifour.fantry.payment.domain.PaymentStatus;
@@ -19,9 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Bootpay Webhook 이벤트를 처리하는 서비스입니다.
@@ -55,20 +49,23 @@ public class BootpayWebhookService {
     private final OrdersService ordersService;
     private final AuctionService auctionService;
     private final OrderUpdateHelper orderUpdateHelper;
+    private final BootpayReceiptConverter bootpayReceiptConverter;
+
     /**
      * 결제 완료 Webhook을 처리합니다.
      *
-     * @param bootpayReceiptDto Bootpay로부터 전달받은 영수증 정보
+     * @param paymentUpdateData Bootpay로부터 전달받은 영수증 정보
      */
     @Transactional
-    public void onPaymentComplete(BootpayReceiptDto bootpayReceiptDto) {
-        log.info("결제 완료 : {}", bootpayReceiptDto);
-        Payment payment = paymentRepository.findByOrderId(bootpayReceiptDto.getOrderId())
+    public void onPaymentComplete(PaymentUpdateData paymentUpdateData) {
+        log.info("결제 완료 : {}", paymentUpdateData);
+        Payment payment = paymentRepository.findByOrderId(paymentUpdateData.getOrderId())
                 .orElseThrow(NotFoundPaymentException::new);
+
         try {
-            processPaymentVerification(payment, bootpayReceiptDto);
+            processPaymentVerification(payment, paymentUpdateData);
             if (payment.getStatus() == PaymentStatus.COMPLETE) {
-                orderUpdateHelper.purchase(payment, bootpayReceiptDto);
+                orderUpdateHelper.purchase(payment);
             }
         } catch (Exception e) {
             log.error("completeError", e);
@@ -81,22 +78,21 @@ public class BootpayWebhookService {
      * 이미 VOID 상태인 경우 처리하지 않습니다.
      * </p>
      *
-     * @param bootpayReceiptDto Bootpay로부터 전달받은 영수증 정보
+     * @param paymentUpdateData Bootpay로부터 전달받은 영수증 정보
      */
     @Transactional
-    public void onPaymentCancelled(BootpayReceiptDto bootpayReceiptDto) {
-        log.info("결제 취소 : {}", bootpayReceiptDto);
-        Payment payment = paymentRepository.findByOrderId(bootpayReceiptDto.getOrderId())
+    public void onPaymentCancelled(PaymentUpdateData paymentUpdateData) {
+        log.info("결제 취소 : {}", paymentUpdateData);
+        Payment payment = paymentRepository.findByOrderId(paymentUpdateData.getOrderId())
                 .orElseThrow(NotFoundPaymentException::new);
+
         if (payment.getStatus() == PaymentStatus.CANCELED) {
             return;
         }
-
-        PaymentMapper.updateFromDto(payment, bootpayReceiptDto);
+        payment.update(paymentUpdateData);
         if (payment.getStatus() == PaymentStatus.CANCELED) {
-           orderUpdateHelper.cancel(bootpayReceiptDto);
+            orderUpdateHelper.cancel(paymentUpdateData);
         }
-        paymentRepository.save(payment);
     }
 
     /**
@@ -105,22 +101,20 @@ public class BootpayWebhookService {
      * 이미 CANCELLED 상태인 경우 처리하지 않습니다.
      * </p>
      *
-     * @param bootpayReceiptDto Bootpay로부터 전달받은 영수증 정보
+     * @param paymentUpdateData Bootpay로부터 전달받은 영수증 정보
      */
     @Transactional
-    public void onPaymentPartialCancelled(BootpayReceiptDto bootpayReceiptDto) {
-        log.info("부분 결제 취소 : {}", bootpayReceiptDto);
-        Payment payment = paymentRepository.findByOrderId(bootpayReceiptDto.getOrderId())
+    public void onPaymentPartialCancelled(PaymentUpdateData paymentUpdateData) {
+        log.info("부분 결제 취소 : {}", paymentUpdateData);
+        Payment payment = paymentRepository.findByOrderId(paymentUpdateData.getOrderId())
                 .orElseThrow(NotFoundPaymentException::new);
         if (payment.getStatus() == PaymentStatus.RETURNED) {
             return;
         }
-
-        PaymentMapper.updateFromDto(payment, bootpayReceiptDto);
-        if(payment.getStatus() == PaymentStatus.RETURNED) {
-            orderUpdateHelper.refund(bootpayReceiptDto);
+        payment.update(paymentUpdateData);
+        if (payment.getStatus() == PaymentStatus.RETURNED) {
+            orderUpdateHelper.refund(paymentUpdateData);
         }
-        paymentRepository.save(payment);
     }
 
     /**
@@ -173,21 +167,19 @@ public class BootpayWebhookService {
      * 결제 검증 및 업데이트 공통 로직
      *
      * @param payment    검증할 결제 엔티티
-     * @param receiptDto Bootpay 영수증 정보
+     * @param updateData Bootpay 영수증 정보
      */
     @Transactional
-    public void processPaymentVerification(Payment payment, BootpayReceiptDto receiptDto) {
+    public void processPaymentVerification(Payment payment, PaymentUpdateData updateData) {
         if (payment.getStatus() == PaymentStatus.COMPLETE) {
             return;
         }
-
-        PaymentMapper.updateFromDto(payment, receiptDto);
-
+        payment.update(updateData);
         if (payment.getPaymentId() != null) {
-            if (receiptDto.verify(payment)) {
-                payment.setStatus(PaymentStatus.COMPLETE);
+            if (payment.isVerify(updateData)) {
+                payment.markComplete();
             } else {
-                ghostPaymentService.createGhostPayment(receiptDto.getReceiptId());
+                ghostPaymentService.createGhostPayment(updateData.getReceiptId());
             }
         }
 
