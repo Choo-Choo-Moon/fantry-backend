@@ -80,9 +80,7 @@ public class GhostPaymentService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createGhostPayment(String receiptId) {
-        GhostPayment ghostPayment = new GhostPayment();
-        ghostPayment.setReceiptId(receiptId);
-        ghostPayment.setStatus(GhostPaymentStatus.CANCEL_RESERVATION);
+        GhostPayment ghostPayment = GhostPayment.create(receiptId);
         ghostPaymentRepository.save(ghostPayment);
     }
 
@@ -93,20 +91,12 @@ public class GhostPaymentService {
      * </p>
      */
     @Component
+    @RequiredArgsConstructor
     static class CleanupExecutor {
         private final GhostPaymentRepository ghostPaymentRepository;
         private final PaymentRepository paymentRepository;
         private final BootpayService bootpayService;
-
-        public CleanupExecutor(
-                GhostPaymentRepository ghostPaymentRepository,
-                PaymentRepository paymentRepository,
-                BootpayService bootpayService
-        ) {
-            this.ghostPaymentRepository = ghostPaymentRepository;
-            this.paymentRepository = paymentRepository;
-            this.bootpayService = bootpayService;
-        }
+        private final BootpayReceiptConverter bootpayReceiptConverter;
 
         /**
          * 유령 결제(GhostPayment)를 처리합니다.
@@ -121,19 +111,18 @@ public class GhostPaymentService {
                 BootpayReceiptDto bootpayReceiptDto = bootpayService.getReceiptViaWebClient(ghostPayment.getReceiptId());
                 String PREFIX = "ghost_";
                 BootpayReceiptDto resultReceiptDto = bootpayService.cancellationViaWebClient(bootpayReceiptDto.getReceiptId(), "유령결제", "CleanupFromServer", PREFIX + bootpayReceiptDto.getOrderId(), String.valueOf(bootpayReceiptDto.getPrice()), null);
-                ghostPayment.setStatus(GhostPaymentStatus.CANCEL_SUCCESS);
+                ghostPayment.cancelSuccess();
                 Payment payment = paymentRepository.findByOrderId(resultReceiptDto.getOrderId())
                         .orElseThrow(NotFoundPaymentException::new);
-                PaymentMapper.updateFromDto(payment, resultReceiptDto);
-                paymentRepository.save(payment);
+                PaymentUpdateData paymentUpdateData = bootpayReceiptConverter.toPaymentUpdateData(resultReceiptDto);
+                payment.update(paymentUpdateData);
                 log.info("유령 결제 취소 성공. Receipt ID: {}", ghostPayment.getReceiptId());
             } catch (AlreadyCancelledPaymentException e) {
-                ghostPayment.setStatus(GhostPaymentStatus.CANCEL_SUCCESS);
+                ghostPayment.cancelSuccess();
             } catch (Exception e) {
                 log.error("유령 결제 취소 중 오류 발생. Receipt ID: {}, Error: {}", ghostPayment.getReceiptId(), e.getMessage());
-                ghostPayment.setStatus(GhostPaymentStatus.CANCEL_FAILED);
+                ghostPayment.cancelFailure();
             }
-            ghostPaymentRepository.save(ghostPayment);
         }
     }
 
