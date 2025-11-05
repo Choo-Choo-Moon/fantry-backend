@@ -15,8 +15,8 @@ import com.eneifour.fantry.inquiry.domain.InquiryStatus;
 import com.eneifour.fantry.inquiry.repository.InquiryRepository;
 import com.eneifour.fantry.member.repository.MemberRepository;
 import com.eneifour.fantry.notice.repository.NoticeRepository;
-import com.eneifour.fantry.orders.domain.OrderStatus;
-import com.eneifour.fantry.orders.repository.OrdersRepository;
+import com.eneifour.fantry.order.domain.OrderStatus;
+import com.eneifour.fantry.order.repository.OrderRepository;
 import com.eneifour.fantry.refund.repository.ReturnRepository;
 import com.eneifour.fantry.report.repository.ReportRepository;
 import com.eneifour.fantry.settlement.repository.SettlementRepository;
@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Map;
@@ -35,7 +34,7 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class DashboardService {
 
-    private final OrdersRepository ordersRepository;
+    private final OrderRepository orderRepository;
     private final DashboardRepository dashboardRepository;
     private final SettlementRepository settlementRepository;
     private final ReturnRepository returnRepository;
@@ -53,9 +52,9 @@ public class DashboardService {
     private final InquiryRepository inquiryRepository;
     private final MemberRepository memberRepository;
 
-    public OrdersStats getOrdersDashboard() {
-        Map<String, Long> ordersByStatus = ordersRepository.countOrdersByStatus();
-        return OrdersStats.builder()
+    public OrderStats getOrdersDashboard() {
+        Map<String, Long> ordersByStatus = orderRepository.countOrderByStatus();
+        return OrderStats.builder()
                 .totalOrders(ordersByStatus.getOrDefault("totalOrders", 0L))
                 .pendingPaymentOrders(ordersByStatus.getOrDefault("pendingPaymentOrders", 0L))
                 .paidOrders(ordersByStatus.getOrDefault("paidOrders", 0L))
@@ -266,8 +265,8 @@ public class DashboardService {
     }
 
     public SalesStats getSalesStats() {
-        long totalSalesProducts = ordersRepository.countByOrderStatus(com.eneifour.fantry.orders.domain.OrderStatus.DELIVERED);
-        BigDecimal totalSoldAmount = ordersRepository.sumPriceByOrderStatus(OrderStatus.DELIVERED);
+        long totalSalesProducts = orderRepository.countByOrderStatus(com.eneifour.fantry.order.domain.OrderStatus.DELIVERED);
+        BigDecimal totalSoldAmount = orderRepository.sumPriceByOrderStatus(OrderStatus.DELIVERED);
 
         return SalesStats.builder()
                 .totalSalesProducts(totalSalesProducts)

@@ -1,6 +1,6 @@
 package com.eneifour.fantry.settlement.domain;
 
-import com.eneifour.fantry.orders.domain.Orders;
+import com.eneifour.fantry.order.domain.Order;
 import com.eneifour.fantry.refund.domain.ReturnRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -38,7 +38,7 @@ public class SettlementItem {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id")
-    private Orders order;
+    private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "return_id")

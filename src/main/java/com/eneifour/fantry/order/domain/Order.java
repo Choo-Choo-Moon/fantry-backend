@@ -1,9 +1,9 @@
-package com.eneifour.fantry.orders.domain;
+package com.eneifour.fantry.order.domain;
 
 
 import com.eneifour.fantry.auction.domain.Auction;
 import com.eneifour.fantry.auction.exception.ErrorCode;
-import com.eneifour.fantry.orders.exception.OrdersException;
+import com.eneifour.fantry.order.exception.OrderException;
 import com.eneifour.fantry.member.domain.Member;
 import com.eneifour.fantry.payment.domain.Payment;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,13 +24,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Schema(description = "주문 정보")
-public class Orders {
+public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "orders_id")
     @Schema(description = "주문 ID (기본 키)")
-    private int ordersId;
+    private int orderId;
 
     @Schema(description = "주문 가격")
     private int price;
@@ -82,7 +82,7 @@ public class Orders {
      */
     public void completePayment(String shippingAddress, Payment  payment) {
         if (this.orderStatus != OrderStatus.PENDING_PAYMENT) {
-            throw new OrdersException(ErrorCode.ORDER_PAYMENT_NOT_PENDING);
+            throw new OrderException(ErrorCode.ORDER_PAYMENT_NOT_PENDING);
         }
         this.orderStatus = OrderStatus.PAID;
         this.shippingAddress = shippingAddress;
@@ -95,7 +95,7 @@ public class Orders {
      */
     public void prepareShipment() {
         if (this.orderStatus != OrderStatus.PAID) {
-            throw new OrdersException(ErrorCode.ORDER_SHIPMENT_NOT_ALLOWED);
+            throw new OrderException(ErrorCode.ORDER_SHIPMENT_NOT_ALLOWED);
         }
         this.orderStatus = OrderStatus.PREPARING_SHIPMENT;
     }
@@ -106,7 +106,7 @@ public class Orders {
      */
     public void ship() {
         if (this.orderStatus != OrderStatus.PREPARING_SHIPMENT) {
-            throw new OrdersException(ErrorCode.ORDER_ALREADY_SHIPPED);
+            throw new OrderException(ErrorCode.ORDER_ALREADY_SHIPPED);
         }
         this.orderStatus = OrderStatus.SHIPPED;
     }
@@ -117,7 +117,7 @@ public class Orders {
      */
     public void markAsDelivered() {
         if (this.orderStatus != OrderStatus.SHIPPED) {
-            throw new OrdersException(ErrorCode.ORDER_DELIVERY_NOT_ALLOWED);
+            throw new OrderException(ErrorCode.ORDER_DELIVERY_NOT_ALLOWED);
         }
         this.orderStatus = OrderStatus.DELIVERED;
         this.deliveredAt = LocalDateTime.now();
@@ -129,7 +129,7 @@ public class Orders {
      */
     public void confirmPurchase() {
         if (this.orderStatus != OrderStatus.DELIVERED) {
-            throw new OrdersException(ErrorCode.ORDER_CONFIRMATION_NOT_ALLOWED);
+            throw new OrderException(ErrorCode.ORDER_CONFIRMATION_NOT_ALLOWED);
         }
         this.orderStatus = OrderStatus.CONFIRMED;
     }
@@ -140,7 +140,7 @@ public class Orders {
      */
     public void requestCancel() {
         if (this.orderStatus == OrderStatus.CANCELLED || this.orderStatus == OrderStatus.REFUNDED) {
-            throw new OrdersException(ErrorCode.ORDER_ALREADY_CANCELLED);
+            throw new OrderException(ErrorCode.ORDER_ALREADY_CANCELLED);
         }
         this.orderStatus = OrderStatus.CANCEL_REQUESTED;
     }
@@ -151,7 +151,7 @@ public class Orders {
      */
     public void cancel() {
         if (this.orderStatus != OrderStatus.CANCEL_REQUESTED) {
-            throw new OrdersException(ErrorCode.ORDER_CANCELLATION_NOT_ALLOWED);
+            throw new OrderException(ErrorCode.ORDER_CANCELLATION_NOT_ALLOWED);
         }
         this.orderStatus = OrderStatus.CANCELLED;
         this.cancelledAt = LocalDateTime.now();
@@ -163,7 +163,7 @@ public class Orders {
      */
     public void requestRefund() {
         if (this.orderStatus != OrderStatus.CONFIRMED && this.orderStatus != OrderStatus.DELIVERED) {
-            throw new OrdersException(ErrorCode.ORDER_REFUND_NOT_ALLOWED);
+            throw new OrderException(ErrorCode.ORDER_REFUND_NOT_ALLOWED);
         }
         this.orderStatus = OrderStatus.REFUND_REQUESTED;
     }
@@ -174,7 +174,7 @@ public class Orders {
      */
     public void completeRefund() {
         if (this.orderStatus != OrderStatus.REFUND_REQUESTED) {
-            throw new OrdersException(ErrorCode.ORDER_INVALID_TRANSITION);
+            throw new OrderException(ErrorCode.ORDER_INVALID_TRANSITION);
         }
         this.orderStatus = OrderStatus.REFUNDED;
     }
@@ -185,7 +185,7 @@ public class Orders {
      */
     public void markAsSettled() {
         if (this.orderStatus != OrderStatus.CONFIRMED) {
-            throw new OrdersException(ErrorCode.ORDER_SETTLEMENT_NOT_ALLOWED); // TODO: Add ORDER_SETTLEMENT_NOT_ALLOWED error code
+            throw new OrderException(ErrorCode.ORDER_SETTLEMENT_NOT_ALLOWED); // TODO: Add ORDER_SETTLEMENT_NOT_ALLOWED error code
         }
         this.orderStatus = OrderStatus.SETTLED;
     }

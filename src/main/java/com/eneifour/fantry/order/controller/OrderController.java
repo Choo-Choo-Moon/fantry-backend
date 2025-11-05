@@ -1,9 +1,9 @@
-package com.eneifour.fantry.orders.controller;
+package com.eneifour.fantry.order.controller;
 
-import com.eneifour.fantry.orders.domain.OrderStatus;
-import com.eneifour.fantry.orders.dto.OrdersRequest;
-import com.eneifour.fantry.orders.dto.OrdersResponse;
-import com.eneifour.fantry.orders.service.OrdersService;
+import com.eneifour.fantry.order.domain.OrderStatus;
+import com.eneifour.fantry.order.dto.OrderRequest;
+import com.eneifour.fantry.order.dto.OrderResponse;
+import com.eneifour.fantry.order.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/orders")
-public class OrdersController {
-    private final OrdersService ordersService;
+public class OrderController {
+    private final OrderService orderService;
 
     /**
      * 주문 목록을 조건에 따라 페이징하여 조회합니다.
@@ -33,12 +33,12 @@ public class OrdersController {
      * @return 페이징 처리된 주문 목록.
      */
     @GetMapping
-    public ResponseEntity<Page<OrdersResponse>> getOrders(
+    public ResponseEntity<Page<OrderResponse>> getOrders(
             @PageableDefault(size = 10) Pageable pageable,
             @RequestParam(required = false) Integer memberId,
             @RequestParam(required = false) OrderStatus orderStatus) {
         log.info("Request to search orders with memberId: {} and orderStatus: {}", memberId, orderStatus);
-        Page<OrdersResponse> orders = ordersService.searchOrders(pageable, memberId, orderStatus);
+        Page<OrderResponse> orders = orderService.searchOrders(pageable, memberId, orderStatus);
         return ResponseEntity.ok(orders);
     }
 
@@ -49,9 +49,9 @@ public class OrdersController {
      * @return 주문 상세 정보.
      */
     @GetMapping("/{ordersId}")
-    public ResponseEntity<OrdersResponse> getOrderById(@PathVariable("ordersId") int ordersId) {
+    public ResponseEntity<OrderResponse> getOrderById(@PathVariable("ordersId") int ordersId) {
         log.info("Request to get order detail for ordersId: {}", ordersId);
-        OrdersResponse order = ordersService.findOne(ordersId);
+        OrderResponse order = orderService.findOne(ordersId);
         return ResponseEntity.ok(order);
     }
 
@@ -62,9 +62,9 @@ public class OrdersController {
      * @return 생성된 주문 정보.
      */
     @PostMapping("/instant-buy")
-    public ResponseEntity<?> createInstantBuyOrder(@Valid @RequestBody OrdersRequest request) {
+    public ResponseEntity<?> createInstantBuyOrder(@Valid @RequestBody OrderRequest request) {
         log.info("Request to create instant-buy order for auctionId: {}", request.getAuctionId());
-        OrdersResponse createdOrder = ordersService.createInstantBuyOrder(request);
+        OrderResponse createdOrder = orderService.createInstantBuyOrder(request);
         return ResponseEntity.ok(createdOrder);
     }
 
@@ -82,7 +82,7 @@ public class OrdersController {
             @RequestParam String shippingAddress,
             @RequestParam int paymentId) {
         log.info("Request to complete payment for orderId: {}", ordersId);
-        ordersService.completeAuctionPayment(shippingAddress, ordersId, paymentId);
+        orderService.completeAuctionPayment(shippingAddress, ordersId, paymentId);
         return ResponseEntity.ok("Order ID " + ordersId + " payment has been completed.");
     }
 
@@ -95,7 +95,7 @@ public class OrdersController {
     @PatchMapping("/{ordersId}/status/prepare-shipment")
     public ResponseEntity<String> prepareShipment(@PathVariable int ordersId) {
         log.info("Request to prepare shipment for orderId: {}", ordersId);
-        ordersService.prepareShipment(ordersId);
+        orderService.prepareShipment(ordersId);
         return ResponseEntity.ok("Order ID " + ordersId + " is preparing for shipment.");
     }
 
@@ -108,7 +108,7 @@ public class OrdersController {
     @PatchMapping("/{ordersId}/status/ship")
     public ResponseEntity<String> shipOrder(@PathVariable int ordersId) {
         log.info("Request to ship orderId: {}", ordersId);
-        ordersService.ship(ordersId);
+        orderService.ship(ordersId);
         return ResponseEntity.ok("Order ID " + ordersId + " is now shipping.");
     }
 
@@ -121,7 +121,7 @@ public class OrdersController {
     @PatchMapping("/{ordersId}/status/delivered")
     public ResponseEntity<String> markAsDelivered(@PathVariable int ordersId) {
         log.info("Request to mark orderId {} as delivered", ordersId);
-        ordersService.markAsDelivered(ordersId);
+        orderService.markAsDelivered(ordersId);
         return ResponseEntity.ok("Order ID " + ordersId + " has been delivered.");
     }
 
@@ -134,7 +134,7 @@ public class OrdersController {
     @PatchMapping("/{ordersId}/status/confirmed")
     public ResponseEntity<String> confirmPurchase(@PathVariable int ordersId) {
         log.info("Request to confirm purchase for orderId: {}", ordersId);
-        ordersService.confirmPurchase(ordersId);
+        orderService.confirmPurchase(ordersId);
         return ResponseEntity.ok("Order ID " + ordersId + " purchase confirmed.");
     }
 
@@ -147,7 +147,7 @@ public class OrdersController {
     @PatchMapping("/{ordersId}/status/cancel-requested")
     public ResponseEntity<String> requestCancel(@PathVariable int ordersId) {
         log.info("Request to cancel orderId: {}", ordersId);
-        ordersService.requestCancel(ordersId);
+        orderService.requestCancel(ordersId);
         return ResponseEntity.ok("Cancellation request for order ID " + ordersId + " has been submitted.");
     }
 
@@ -160,7 +160,7 @@ public class OrdersController {
     @PatchMapping("/{ordersId}/status/cancelled")
     public ResponseEntity<String> cancelOrder(@PathVariable int ordersId) {
         log.info("Confirm cancellation for orderId: {}", ordersId);
-        ordersService.cancel(ordersId);
+        orderService.cancel(ordersId);
         return ResponseEntity.ok("Order ID " + ordersId + " has been cancelled.");
     }
 
@@ -173,7 +173,7 @@ public class OrdersController {
     @PatchMapping("/{ordersId}/status/refund-requested")
     public ResponseEntity<String> requestRefund(@PathVariable int ordersId) {
         log.info("Request to refund orderId: {}", ordersId);
-        ordersService.requestRefund(ordersId);
+        orderService.requestRefund(ordersId);
         return ResponseEntity.ok("Refund request for order ID " + ordersId + " has been submitted.");
     }
 
@@ -186,7 +186,7 @@ public class OrdersController {
     @PatchMapping("/{ordersId}/status/refunded")
     public ResponseEntity<String> completeRefund(@PathVariable int ordersId) {
         log.info("Confirm refund for orderId: {}", ordersId);
-        ordersService.completeRefund(ordersId);
+        orderService.completeRefund(ordersId);
         return ResponseEntity.ok("Order ID " + ordersId + " has been refunded.");
     }
 }

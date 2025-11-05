@@ -1,9 +1,9 @@
 package com.eneifour.fantry.settlement.service;
 
 import com.eneifour.fantry.member.domain.Member;
-import com.eneifour.fantry.orders.domain.Orders;
-import com.eneifour.fantry.orders.domain.OrderStatus;
-import com.eneifour.fantry.orders.repository.OrdersRepository;
+import com.eneifour.fantry.order.domain.Order;
+import com.eneifour.fantry.order.domain.OrderStatus;
+import com.eneifour.fantry.order.repository.OrderRepository;
 import com.eneifour.fantry.refund.domain.ReturnRequest;
 import com.eneifour.fantry.refund.domain.ReturnStatus;
 import com.eneifour.fantry.refund.repository.ReturnRepository;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class SettlementService {
 
     private final SettlementRepository settlementRepository;
-    private final OrdersRepository ordersRepository;
+    private final OrderRepository orderRepository;
     private final ReturnRepository returnRepository;
     private final SettlementSettingRepository settlementSettingRepository;
     private final CommissionRuleRepository commissionRuleRepository;
@@ -79,15 +79,15 @@ public class SettlementService {
     @Transactional
     public void processSettlements(LocalDateTime startDate, LocalDateTime endDate) {
         SettlementSetting defaultSetting = getSettlementSetting();
-        List<Orders> completedOrders = getCompletedOrdersForPeriod(startDate, endDate);
+        List<Order> completedOrders = getCompletedOrdersForPeriod(startDate, endDate);
         Map<Integer, ReturnRequest> completedReturnsMap = getCompletedReturnsForPeriod(startDate, endDate);
 
-        Map<Member, List<Orders>> ordersBySeller = completedOrders.stream()
-                .collect(Collectors.groupingBy(Orders::getMember));
+        Map<Member, List<Order>> ordersBySeller = completedOrders.stream()
+                .collect(Collectors.groupingBy(Order::getMember));
 
-        for (Map.Entry<Member, List<Orders>> entry : ordersBySeller.entrySet()) {
+        for (Map.Entry<Member, List<Order>> entry : ordersBySeller.entrySet()) {
             Member seller = entry.getKey();
-            List<Orders> sellerOrders = entry.getValue();
+            List<Order> sellerOrders = entry.getValue();
 
             BigDecimal totalSalesAmount = BigDecimal.ZERO;
             BigDecimal totalCommissionAmount = BigDecimal.ZERO;
@@ -100,7 +100,7 @@ public class SettlementService {
                     .build();
             settlement = settlementRepository.save(settlement);
 
-            for (Orders order : sellerOrders) {
+            for (Order order : sellerOrders) {
                 BigDecimal itemSaleAmount = BigDecimal.valueOf(order.getPrice());
                 BigDecimal appliedCommissionRate = defaultSetting.getCommissionRate();
 
@@ -109,9 +109,9 @@ public class SettlementService {
                 BigDecimal commissionAmount = itemSaleAmount.multiply(appliedCommissionRate);
                 BigDecimal netSaleAmount = itemSaleAmount.subtract(commissionAmount);
 
-                boolean isReturned = completedReturnsMap.containsKey(order.getOrdersId());
+                boolean isReturned = completedReturnsMap.containsKey(order.getOrderId());
                 if (isReturned) {
-                    ReturnRequest returnRequest = completedReturnsMap.get(order.getOrdersId());
+                    ReturnRequest returnRequest = completedReturnsMap.get(order.getOrderId());
                     netSaleAmount = BigDecimal.ZERO;
                     totalRefundAmount = totalRefundAmount.add(returnRequest.getFinalRefundAmount());
                 }
@@ -122,7 +122,7 @@ public class SettlementService {
                 SettlementItem item = SettlementItem.builder()
                         .settlement(settlement)
                         .order(order)
-                        .returnRequest(isReturned ? completedReturnsMap.get(order.getOrdersId()) : null)
+                        .returnRequest(isReturned ? completedReturnsMap.get(order.getOrderId()) : null)
                         .itemSaleAmount(itemSaleAmount)
                         .commissionRate(appliedCommissionRate)
                         .commissionAmount(commissionAmount)
@@ -170,13 +170,13 @@ public class SettlementService {
                 .orElseThrow(() -> new SettlementException(SettlementErrorCode.SETTLEMENT_SETTING_NOT_FOUND));
     }
 
-    private List<Orders> getCompletedOrdersForPeriod(LocalDateTime startDate, LocalDateTime endDate) {
-        return ordersRepository.findByOrderStatusAndCreatedAtBetween(OrderStatus.CONFIRMED, startDate, endDate);
+    private List<Order> getCompletedOrdersForPeriod(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderRepository.findByOrderStatusAndCreatedAtBetween(OrderStatus.CONFIRMED, startDate, endDate);
     }
 
     private Map<Integer, ReturnRequest> getCompletedReturnsForPeriod(LocalDateTime startDate, LocalDateTime endDate) {
         return returnRepository.findByStatusAndCompletedAtBetween(ReturnStatus.COMPLETED, startDate, endDate)
                 .stream()
-                .collect(Collectors.toMap(r -> r.getOrders().getOrdersId(), r -> r));
+                .collect(Collectors.toMap(r -> r.getOrder().getOrderId(), r -> r));
     }
 }

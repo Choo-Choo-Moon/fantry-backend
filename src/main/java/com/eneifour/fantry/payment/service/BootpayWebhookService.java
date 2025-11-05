@@ -1,7 +1,7 @@
 package com.eneifour.fantry.payment.service;
 
 import com.eneifour.fantry.auction.service.AuctionService;
-import com.eneifour.fantry.orders.service.OrdersService;
+import com.eneifour.fantry.order.service.OrderService;
 import com.eneifour.fantry.payment.domain.Payment;
 import com.eneifour.fantry.payment.domain.PaymentStatus;
 import com.eneifour.fantry.payment.domain.vo.PaymentUpdateData;
@@ -46,7 +46,7 @@ import java.util.Map;
 public class BootpayWebhookService {
     private final PaymentRepository paymentRepository;
     private final GhostPaymentService ghostPaymentService;
-    private final OrdersService ordersService;
+    private final OrderService orderService;
     private final AuctionService auctionService;
     private final OrderUpdateHelper orderUpdateHelper;
     private final BootpayReceiptConverter bootpayReceiptConverter;

@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class OrdersStats {
+public class OrderStats {
     private final long totalOrders;
     private final long pendingPaymentOrders;
     private final long paidOrders;

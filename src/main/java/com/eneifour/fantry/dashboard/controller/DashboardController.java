@@ -29,7 +29,7 @@ public class DashboardController {
 
     //재고관리대시보드
     @GetMapping("/orders")
-    public ResponseEntity<OrdersStats> getOrdersDashboard() {
+    public ResponseEntity<OrderStats> getOrdersDashboard() {
         return ResponseEntity.ok(dashboardService.getOrdersDashboard());
     }
 

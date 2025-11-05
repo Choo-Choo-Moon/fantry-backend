@@ -25,7 +25,7 @@ public record SettlementItemDto(
         }
 
         return SettlementItemDto.builder()
-                .orderId(item.getOrder() != null ? item.getOrder().getOrdersId() : 0)
+                .orderId(item.getOrder() != null ? item.getOrder().getOrderId() : 0)
                 .productName(productName)
                 .itemSaleAmount(item.getItemSaleAmount())
                 .commissionRate(item.getCommissionRate())

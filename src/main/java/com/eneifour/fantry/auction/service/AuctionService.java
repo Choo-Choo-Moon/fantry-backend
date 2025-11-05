@@ -30,15 +30,14 @@ import com.eneifour.fantry.inspection.support.exception.BusinessException;
 import com.eneifour.fantry.inspection.support.exception.InspectionErrorCode;
 import com.eneifour.fantry.member.domain.Member;
 import com.eneifour.fantry.member.repository.MemberRepository;
-import com.eneifour.fantry.orders.domain.OrderStatus;
-import com.eneifour.fantry.orders.domain.Orders;
-import com.eneifour.fantry.orders.repository.OrdersRepository;
+import com.eneifour.fantry.order.domain.Order;
+import com.eneifour.fantry.order.domain.OrderStatus;
+import com.eneifour.fantry.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -59,7 +58,7 @@ public class AuctionService {
     private final RedisService redisService;
     private final InspectionRepository inspectionRepository;
     private final MemberRepository memberRepository;
-    private final OrdersRepository ordersRepository;
+    private final OrderRepository orderRepository;
     private final BidRepository bidRepository;
     private final InspectionService inspectionService; // InspectionService 의존성 추가
     private final AuctionSpecification auctionSpecification; // AuctionSpecification 의존성 추가
@@ -240,12 +239,12 @@ public class AuctionService {
     @Transactional(readOnly = true)
     public Optional<String> getAuctionWinnerStatus(int auctionId, int memberId) {
         // auctionId로 주문(낙찰 정보)을 조회합니다.
-        Optional<Orders> orderOpt = ordersRepository.findByAuction_AuctionId(auctionId);
+        Optional<Order> orderOpt = orderRepository.findByAuction_AuctionId(auctionId);
         // 주문이 존재하지 않으면, 아직 낙찰자가 없는 상태이므로 빈 Optional을 반환합니다.
         if (orderOpt.isEmpty()) {
             return Optional.empty();
         }
-        Orders order = orderOpt.get();
+        Order order = orderOpt.get();
         // 주문의 구매자 ID와 요청한 회원의 ID가 일치하는지 확인합니다.
         if (order.getMember().getMemberId() == memberId) {
             // 일치하면, 해당 주문의 상태(Enum)를 문자열로 변환하여 Optional에 담아 반환합니다.
@@ -516,14 +515,14 @@ public class AuctionService {
             auction.closeAsSold(finalPrice);
 
             // 1-3. 새로운 주문(Orders)을 생성합니다.
-            Orders newOrder = Orders.builder()
+            Order newOrder = Order.builder()
                     .auction(auction)
                     .member(winner)
                     .orderStatus(OrderStatus.PENDING_PAYMENT) // 초기 주문 상태는 '결제 대기중'
                     .price(finalPrice)
                     .build();
 
-            ordersRepository.save(newOrder);
+            orderRepository.save(newOrder);
 
             // [상태 연동] 재고 상태를 SOLD(판매 완료)로 변경합니다.
             inspectionService.updateInventoryStatus(auction.getProductInspection().getProductInspectionId(), InventoryStatus.SOLD);

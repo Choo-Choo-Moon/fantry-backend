@@ -21,7 +21,7 @@ public record ReturnSummaryResponse(
     public static ReturnSummaryResponse from(ReturnRequest returnRequest) {
         return new ReturnSummaryResponse(
                 returnRequest.getReturnRequestId(),
-                returnRequest.getOrders().getOrdersId(),
+                returnRequest.getOrder().getOrderId(),
                 returnRequest.getMember().getName(),
                 returnRequest.getStatus(),
                 returnRequest.getCreatedAt()

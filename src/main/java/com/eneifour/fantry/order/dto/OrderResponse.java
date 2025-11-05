@@ -1,6 +1,6 @@
-package com.eneifour.fantry.orders.dto;
+package com.eneifour.fantry.order.dto;
 
-import com.eneifour.fantry.orders.domain.Orders;
+import com.eneifour.fantry.order.domain.Order;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OrdersResponse {
+public class OrderResponse {
     // 주문 기본 정보
     private int ordersId;
     private int price;
@@ -36,18 +36,18 @@ public class OrdersResponse {
     //결제 정보
     private String receiptUrl; //결제 완료되면 update
 
-    public static OrdersResponse from(Orders orders) {
-        return OrdersResponse.builder()
-                .ordersId(orders.getOrdersId())
-                .price(orders.getPrice())
-                .orderStatus(orders.getOrderStatus().toString())
-                .orderedAt(orders.getCreatedAt())
-                .auctionId(orders.getAuction().getAuctionId())
-                .itemName(orders.getAuction().getProductInspection().getItemName())
-                .saleType(orders.getAuction().getSaleType().toString())
-                .buyerId(orders.getMember().getMemberId())
-                .buyerName(orders.getMember().getName())
-                .tel(orders.getMember().getTel())
+    public static OrderResponse from(Order order) {
+        return OrderResponse.builder()
+                .ordersId(order.getOrderId())
+                .price(order.getPrice())
+                .orderStatus(order.getOrderStatus().toString())
+                .orderedAt(order.getCreatedAt())
+                .auctionId(order.getAuction().getAuctionId())
+                .itemName(order.getAuction().getProductInspection().getItemName())
+                .saleType(order.getAuction().getSaleType().toString())
+                .buyerId(order.getMember().getMemberId())
+                .buyerName(order.getMember().getName())
+                .tel(order.getMember().getTel())
                 .build();
     }
 

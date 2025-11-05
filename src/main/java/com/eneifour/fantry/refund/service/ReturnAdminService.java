@@ -3,7 +3,7 @@ package com.eneifour.fantry.refund.service;
 import com.eneifour.fantry.common.util.file.FileService;
 import com.eneifour.fantry.member.domain.Member;
 import com.eneifour.fantry.member.repository.JpaMemberRepository;
-import com.eneifour.fantry.orders.domain.Orders;
+import com.eneifour.fantry.order.domain.Order;
 import com.eneifour.fantry.payment.domain.Payment;
 import com.eneifour.fantry.payment.dto.PaymentCancelRequest;
 import com.eneifour.fantry.payment.repository.PaymentRepository;
@@ -17,7 +17,7 @@ import com.eneifour.fantry.refund.exception.ReturnException;
 import com.eneifour.fantry.refund.repository.ReturnRepository;
 import com.eneifour.fantry.refund.repository.ReturnSpecification;
 import com.eneifour.fantry.refund.repository.ReturnStatusHistoryRepository;
-import com.eneifour.fantry.orders.repository.OrdersRepository;
+import com.eneifour.fantry.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,7 +40,7 @@ public class ReturnAdminService {
     private final ReturnSpecification returnSpecification;
     private final JpaMemberRepository memberRepository;
     private final PaymentRepository paymentRepository;
-    private final OrdersRepository ordersRepository;
+    private final OrderRepository orderRepository;
     private final ReturnStatusHistoryRepository historyRepository;
     private final PaymentService paymentService;
     private final FileService fileService;
@@ -52,10 +52,10 @@ public class ReturnAdminService {
         Payment payment = paymentRepository.findByOrderId(request.orderId())
                 .orElseThrow(() -> new ReturnException(ReturnErrorCode.ORDER_NOT_FOUND));
 
-        Orders order = ordersRepository.findByPayment(payment)
+        Order order = orderRepository.findByPayment(payment)
                 .orElseThrow(() -> new ReturnException(ReturnErrorCode.ORDER_NOT_FOUND));
 
-        if (returnRepository.existsByOrders(order)) {
+        if (returnRepository.existsByOrder(order)) {
             throw new ReturnException(ReturnErrorCode.DUPLICATE_REQUEST);
         }
 
@@ -152,7 +152,7 @@ public class ReturnAdminService {
 
     private void cancelPaymentForRequest(ReturnRequest returnRequest) {
         try {
-            String orderId = returnRequest.getOrders().getPayment().getOrderId();
+            String orderId = returnRequest.getOrder().getPayment().getOrderId();
             if (orderId == null) throw new ReturnException(ReturnErrorCode.PAYMENT_INFO_NOT_FOUND);
 
             PaymentCancelRequest cancelRequest = PaymentCancelRequest.builder()
@@ -161,7 +161,7 @@ public class ReturnAdminService {
                     .username(String.valueOf(returnRequest.getMember().getMemberId()))
                     .cancelReason("관리자 환불 승인")
                     .build();
-            paymentService.cancelPayment(returnRequest.getOrders().getPayment().getOrderId(), cancelRequest);
+            paymentService.cancelPayment(returnRequest.getOrder().getPayment().getOrderId(), cancelRequest);
         } catch (Exception e) {
             throw new ReturnException(ReturnErrorCode.REFUND_FAILED, e);
         }

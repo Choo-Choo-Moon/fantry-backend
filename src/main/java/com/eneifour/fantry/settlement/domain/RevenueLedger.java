@@ -1,6 +1,6 @@
 package com.eneifour.fantry.settlement.domain;
 
-import com.eneifour.fantry.orders.domain.Orders;
+import com.eneifour.fantry.order.domain.Order;
 import com.eneifour.fantry.refund.domain.ReturnRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -40,7 +40,7 @@ public class RevenueLedger {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "related_order_id")
-    private Orders relatedOrder;
+    private Order relatedOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "related_return_id")

@@ -3,9 +3,9 @@ package com.eneifour.fantry.refund.service;
 import com.eneifour.fantry.common.util.file.FileMeta;
 import com.eneifour.fantry.common.util.file.FileService;
 import com.eneifour.fantry.member.domain.Member;
-import com.eneifour.fantry.orders.domain.OrderStatus;
-import com.eneifour.fantry.orders.domain.Orders;
-import com.eneifour.fantry.orders.repository.OrdersRepository;
+import com.eneifour.fantry.order.domain.OrderStatus;
+import com.eneifour.fantry.order.domain.Order;
+import com.eneifour.fantry.order.repository.OrderRepository;
 import com.eneifour.fantry.payment.domain.Payment;
 import com.eneifour.fantry.payment.repository.PaymentRepository;
 import com.eneifour.fantry.refund.domain.ReturnRequest;
@@ -41,12 +41,12 @@ public class ReturnService {
 
     private final ReturnRepository returnRepository;
     private final PaymentRepository paymentRepository;
-    private final OrdersRepository ordersRepository;
+    private final OrderRepository orderRepository;
     private final FileService fileService;
     private final ReturnStatusHistoryRepository historyRepository;
 
     public ReturnDetailResponse createReturnRequest(ReturnCreateRequest request, Member member) {
-        Orders order = ordersRepository.findById(Integer.parseInt(request.orderId()))
+        Order order = orderRepository.findById(Integer.parseInt(request.orderId()))
                 .orElseThrow(() -> new ReturnException(ReturnErrorCode.ORDER_NOT_FOUND));
 
         Payment payment = order.getPayment();
@@ -58,7 +58,7 @@ public class ReturnService {
             throw new ReturnException(ReturnErrorCode.ACCESS_DENIED);
         }
 
-        if (returnRepository.existsByOrders(order)) {
+        if (returnRepository.existsByOrder(order)) {
             throw new ReturnException(ReturnErrorCode.DUPLICATE_REQUEST);
         }
 

@@ -35,7 +35,7 @@ public record ReturnDetailResponse(
 
         return new ReturnDetailResponse(
                 returnRequest.getReturnRequestId(),
-                returnRequest.getOrders().getOrdersId(),
+                returnRequest.getOrder().getOrderId(),
                 returnRequest.getReason(),
                 returnRequest.getDetailReason(),
                 returnRequest.getStatus(),

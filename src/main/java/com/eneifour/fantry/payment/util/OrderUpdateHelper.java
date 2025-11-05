@@ -5,9 +5,9 @@ import com.eneifour.fantry.auction.domain.SaleStatus;
 import com.eneifour.fantry.auction.dto.AuctionDetailResponse;
 import com.eneifour.fantry.auction.repository.AuctionRepository;
 import com.eneifour.fantry.auction.service.AuctionService;
-import com.eneifour.fantry.orders.domain.Orders;
-import com.eneifour.fantry.orders.dto.OrdersRequest;
-import com.eneifour.fantry.orders.service.OrdersService;
+import com.eneifour.fantry.order.domain.Order;
+import com.eneifour.fantry.order.dto.OrderRequest;
+import com.eneifour.fantry.order.service.OrderService;
 import com.eneifour.fantry.payment.domain.Payment;
 import com.eneifour.fantry.payment.domain.vo.PaymentUpdateData;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class OrderUpdateHelper {
-    private final OrdersService ordersService;
+    private final OrderService orderService;
     private final AuctionService auctionService;
     private final AuctionRepository auctionRepository;
 
@@ -50,17 +50,17 @@ public class OrderUpdateHelper {
         AuctionDetailResponse auction = auctionService.findByAuctionId((Integer) auctionInfo.get("auctionId"));
         String shippingAddress = shippingInfo.get("address") + " " + shippingInfo.get("detailAddress");
         if (auction.getSaleType().toLowerCase(Locale.ROOT).equals("auction")) {
-            Orders orders = ordersService.findByAuctionId(auction.getAuctionId());
+            Order order = orderService.findByAuctionId(auction.getAuctionId());
 
-            log.info("ordersResponse : {}", orders);
-            ordersService.completeAuctionPayment(shippingAddress, orders.getOrdersId(), payment.getPaymentId());
+            log.info("ordersResponse : {}", order);
+            orderService.completeAuctionPayment(shippingAddress, order.getOrderId(), payment.getPaymentId());
         } else {
-            Orders orders = null;
+            Order order = null;
             try {
-                orders = ordersService.findByAuctionId(auction.getAuctionId());
+                order = orderService.findByAuctionId(auction.getAuctionId());
             } catch (Exception ignore) {
             }
-            if (orders != null) {
+            if (order != null) {
                 return;
             }
             Optional<Auction> response = auctionRepository.findByIdForUpdate(auction.getAuctionId());
@@ -74,8 +74,8 @@ public class OrderUpdateHelper {
                     value.closeAsSold((int) auctionInfo.get("itemPrice"));
                 }
             });
-            OrdersRequest ordersRequest = new OrdersRequest(auction.getAuctionId(), (int) userInfo.get("memberId"), (int) auctionInfo.get("itemPrice"), payment.getPaymentId(), shippingAddress);
-            ordersService.createInstantBuyOrder(ordersRequest);
+            OrderRequest orderRequest = new OrderRequest(auction.getAuctionId(), (int) userInfo.get("memberId"), (int) auctionInfo.get("itemPrice"), payment.getPaymentId(), shippingAddress);
+            orderService.createInstantBuyOrder(orderRequest);
         }
     }
 
@@ -89,8 +89,8 @@ public class OrderUpdateHelper {
             return;
         }
         Map<String, Object> auctionInfo = (Map<String, Object>) metaData.get("auctionInfo");
-        Orders orders = ordersService.findByAuctionId((int) auctionInfo.get("auctionId"));
-        ordersService.completeRefund(orders.getOrdersId());
+        Order order = orderService.findByAuctionId((int) auctionInfo.get("auctionId"));
+        orderService.completeRefund(order.getOrderId());
     }
 
     @Transactional
@@ -104,8 +104,8 @@ public class OrderUpdateHelper {
                 return;
             }
             Map<String, Object> auctionInfo = (Map<String, Object>) metaData.get("auctionInfo");
-            Orders orders = ordersService.findByAuctionId((int) auctionInfo.get("auctionId"));
-            ordersService.cancel(orders.getOrdersId());
+            Order order = orderService.findByAuctionId((int) auctionInfo.get("auctionId"));
+            orderService.cancel(order.getOrderId());
         } catch (Exception e) {
             log.error("주문 취소 에러 : {}", e.getMessage());
         }

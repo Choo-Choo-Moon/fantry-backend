@@ -2,9 +2,9 @@ package com.eneifour.fantry.settlement.service;
 
 import com.eneifour.fantry.member.domain.Member;
 import com.eneifour.fantry.member.repository.MemberRepository;
-import com.eneifour.fantry.orders.domain.Orders;
-import com.eneifour.fantry.orders.domain.OrderStatus;
-import com.eneifour.fantry.orders.repository.OrdersRepository;
+import com.eneifour.fantry.order.domain.Order;
+import com.eneifour.fantry.order.domain.OrderStatus;
+import com.eneifour.fantry.order.repository.OrderRepository;
 import com.eneifour.fantry.settlement.domain.*;
 import com.eneifour.fantry.settlement.domain.SettlementSetting;
 import com.eneifour.fantry.settlement.dto.SettlementSettingRequest;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 public class SettlementAdminService {
 
     private final SettlementSettingRepository settlementSettingRepository;
-    private final OrdersRepository ordersRepository;
+    private final OrderRepository orderRepository;
     private final SettlementRepository settlementRepository;
     private final RevenueLedgerRepository revenueLedgerRepository;
     private final CommissionRuleRepository commissionRuleRepository;
@@ -123,24 +123,24 @@ public class SettlementAdminService {
         // 2. 정산 대상 주문 조회 (배송 완료 상태)
         // XXX: `updatedAt`이 아닌 `deliveredAt` 기준으로 조회하는 것이 더 정확합니다.
         //      향후 `OrdersRepository`에 `findByOrderStatusAndDeliveredAtBefore` 메서드 추가를 권장합니다.
-        List<Orders> ordersDelivered = ordersRepository.findByOrderStatusAndUpdatedAtBefore(OrderStatus.DELIVERED, cutoffDate);
+        List<Order> orderDelivered = orderRepository.findByOrderStatusAndUpdatedAtBefore(OrderStatus.DELIVERED, cutoffDate);
 
         // 추가 필터링: deliveredAt이 cutoffDate 이전인지 다시 확인하여 정확성 확보
-        List<Orders> eligibleOrders = ordersDelivered.stream()
+        List<Order> eligibleOrders = orderDelivered.stream()
                 .filter(order -> order.getDeliveredAt() != null && order.getDeliveredAt().isBefore(cutoffDate))
                 .collect(Collectors.toList());
 
         // 3. 판매자 ID별로 주문 그룹화
         // XXX: `Orders` 엔티티에 Seller(판매자)를 직접 연결하는 것이 좋습니다.
         //      현재 구조는 경매를 통한 판매에만 의존하고 있어, 다른 판매 방식 추가 시 정산 로직이 동작하지 않을 수 있습니다.
-        Map<Integer, List<Orders>> ordersBySellerId = eligibleOrders.stream()
+        Map<Integer, List<Order>> ordersBySellerId = eligibleOrders.stream()
                 .filter(order -> order.getAuction() != null && order.getAuction().getProductInspection() != null)
                 .collect(Collectors.groupingBy(order -> order.getAuction().getProductInspection().getMemberId()));
 
         // 4. 각 판매자별로 정산 처리
-        for (Map.Entry<Integer, List<Orders>> entry : ordersBySellerId.entrySet()) {
+        for (Map.Entry<Integer, List<Order>> entry : ordersBySellerId.entrySet()) {
             Integer sellerId = entry.getKey();
-            List<Orders> sellerOrders = entry.getValue();
+            List<Order> sellerOrders = entry.getValue();
 
             Member seller = memberRepository.findById(sellerId).orElse(null);
             if (seller == null) {
@@ -161,7 +161,7 @@ public class SettlementAdminService {
             BigDecimal commissionRate = applicableRule.getCommissionRate().divide(new BigDecimal("100"));
 
             // 5. 실제 결제 금액(Payment) 기준으로 정산 금액 계산
-            List<Orders> validOrders = sellerOrders.stream()
+            List<Order> validOrders = sellerOrders.stream()
                     .filter(o -> o.getPayment() != null && o.getPayment().getPrice() != null)
                     .collect(Collectors.toList());
 

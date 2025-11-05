@@ -3,8 +3,8 @@ package com.eneifour.fantry.refund.domain;
 import com.eneifour.fantry.common.domain.BaseAuditingEntity;
 import com.eneifour.fantry.common.util.file.FileMeta;
 import com.eneifour.fantry.member.domain.Member;
-import com.eneifour.fantry.orders.domain.OrderStatus;
-import com.eneifour.fantry.orders.domain.Orders;
+import com.eneifour.fantry.order.domain.Order;
+import com.eneifour.fantry.order.domain.OrderStatus;
 import com.eneifour.fantry.refund.dto.ReturnAdminCreateRequest;
 import com.eneifour.fantry.refund.dto.ReturnCreateRequest;
 import com.eneifour.fantry.refund.exception.ReturnErrorCode;
@@ -37,7 +37,7 @@ public class ReturnRequest extends BaseAuditingEntity {
     // 환불/반품을 요청한 원본 주문
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
-    private Orders orders;
+    private Order order;
 
     // 환불/반품을 요청한 사용자
     @ManyToOne(fetch = FetchType.LAZY)
@@ -161,13 +161,13 @@ public class ReturnRequest extends BaseAuditingEntity {
      * 사용자의 환불 요청 DTO를 기반으로 ReturnRequest 엔티티를 생성합니다.
      * '배송 완료' 상태의 주문에 대해서만 생성이 가능합니다.
      */
-    public static ReturnRequest of(Orders order, Member member, ReturnCreateRequest request) {
+    public static ReturnRequest of(Order order, Member member, ReturnCreateRequest request) {
         if (order.getOrderStatus() != OrderStatus.DELIVERED) {
             throw new ReturnException(ReturnErrorCode.NOT_REFUNDABLE_STATUS);
         }
         BigDecimal originalAmount = BigDecimal.valueOf(order.getPrice());
         return ReturnRequest.builder()
-                .orders(order)
+                .order(order)
                 .member(member)
                 .reason(request.reason())
                 .detailReason(request.detailReason())
@@ -182,10 +182,10 @@ public class ReturnRequest extends BaseAuditingEntity {
      * 관리자가 생성하는 환불 요청 DTO를 기반으로 ReturnRequest 엔티티를 생성합니다.
      * 생성 주체(createdBy)는 관리자로 기록됩니다.
      */
-    public static ReturnRequest of(Orders order, Member buyer, ReturnAdminCreateRequest request, Member admin) {
+    public static ReturnRequest of(Order order, Member buyer, ReturnAdminCreateRequest request, Member admin) {
         BigDecimal originalAmount = BigDecimal.valueOf(order.getPrice());
         return ReturnRequest.builder()
-                .orders(order)
+                .order(order)
                 .member(buyer) // 환불 요청의 주체는 구매자(buyer)
                 .reason(request.reason())
                 .detailReason(request.detailReason())

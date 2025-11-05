@@ -1,7 +1,7 @@
 package com.eneifour.fantry.refund.repository;
 
 import com.eneifour.fantry.member.domain.Member;
-import com.eneifour.fantry.orders.domain.Orders;
+import com.eneifour.fantry.order.domain.Order;
 import com.eneifour.fantry.refund.domain.ReturnRequest;
 import com.eneifour.fantry.refund.domain.ReturnStatus;
 import org.springframework.data.domain.Page;
@@ -33,7 +33,7 @@ public interface ReturnRepository extends JpaRepository<ReturnRequest, Integer>,
     /**
      * 특정 주문에 대해 이미 환불/반품 요청이 존재하는지 확인합니다.
      */
-    boolean existsByOrders(Orders orders);
+    boolean existsByOrder(Order order);
 
     /**
      * ID를 기준으로 환불/반품 요청을 조회하되, 관련된 모든 연관 엔티티(첨부파일, 상태 이력 등)를 함께 조회합니다.
